@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Labour Econ Midterm Practice</title>
+<style>
+:root{--bg:#f3f5f2;--card:#fff;--ink:#1c2a26;--mute:#66756f;--line:#d5dcd8;--acc:#1f6b5a;--ok:#2e7d4f;--okbg:#e3f3e8;--bad:#b3392f;--badbg:#f9e4e1}
+@media(prefers-color-scheme:dark){:root{--bg:#121917;--card:#1b2522;--ink:#e6eeea;--mute:#93a39c;--line:#2f3d38;--acc:#5fc2a8;--ok:#6fcf93;--okbg:#1c3a2a;--bad:#ef8a80;--badbg:#3d2220}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Georgia,"Iowan Old Style",serif}
+main{max-width:640px;margin:0 auto;padding:12px 14px 40px}
+header{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0 10px}
+.tag{font:600 13px system-ui,sans-serif;color:var(--acc)}
+button{font:600 15px system-ui,sans-serif;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px;min-height:44px}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+h1{font-size:20px;line-height:1.35;margin:6px 0 16px;font-weight:600}
+.opt{display:block;width:100%;text-align:left;font:16px/1.4 Georgia,serif;margin:0 0 10px;padding:13px 14px}
+.opt.right{background:var(--okbg);border-color:var(--ok)}
+.opt.wrong{background:var(--badbg);border-color:var(--bad)}
+.exp{margin-top:12px;padding:12px 14px;border-left:4px solid var(--acc);background:var(--bg);font-size:16px}
+nav{display:flex;gap:10px;margin-top:14px}
+nav button{flex:1}
+#go{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+#grid{display:none;grid-template-columns:repeat(6,1fr);gap:8px;margin:0 0 14px}
+#grid.on{display:grid}
+#grid button{padding:10px 0;min-height:44px}
+#grid .cur{outline:3px solid var(--acc)}
+#grid .r{background:var(--okbg)}#grid .w{background:var(--badbg)}
+.jump{display:none;gap:8px;margin-bottom:10px}.jump.on{display:flex}
+.jump input{flex:1;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+small{color:var(--mute);font-family:system-ui,sans-serif}
+</style>
+</head>
+<body>
+<main>
+<header>
+<button id="menu" aria-expanded="false">Jump to…</button>
+<span class="tag" id="score"></span>
+</header>
+<div class="jump" id="jump"><input id="num" type="number" inputmode="numeric" min="1" placeholder="Question number"><button id="jgo">Go</button></div>
+<div id="grid"></div>
+<section class="card" aria-live="polite">
+<div class="tag" id="meta"></div>
+<h1 id="q"></h1>
+<div id="opts"></div>
+<div id="exp"></div>
+</section>
+<nav><button id="prev">Back</button><button id="next" id2="n">Next</button></nav>
+<p><small>Progress is not saved. Refreshing resets answers, and the question list keeps its order.</small></p>
+</main>
+<script>
+// Add more questions by appending to this list: [topic, question, [4 options], correct index (0-3), explanation]
+const Q=[
+["Supply","At an interior optimum in the income-leisure model, which condition holds?",["MRS equals the market wage rate","MRS equals the reservation wage","MRS equals non-labour income","MRS equals the hours-to-leisure ratio"],0,"The indifference curve is tangent to the budget line, so willingness to trade equals ability to trade."],
+["Measurement","A worker is off sick and still has a job waiting. How does the labour force survey classify them?",["Employed, since they have a job","Unemployed, since they are not working","Not in the labour force, since not active","Discouraged, since they are not searching"],0,"Employed includes people temporarily away because of illness or leave."],
+["Supply","Non-labour income rises and leisure is a normal good. For someone who keeps working, what happens to hours?",["They fall, driven by a pure income effect","They rise, driven by a substitution effect","They stay put, since the wage is unchanged","They rise, since consumption now costs less"],0,"The budget line shifts out in parallel. The wage is unchanged, so there is no substitution effect."],
+["Regression","A regression reports a low R-squared. What is the most direct reading?",["Other variables help explain the outcome","The slope coefficient must be insignificant","The relationship is spurious, not causal","The sample is too small to estimate"],0,"R-squared is the share of variation explained. Low values leave room for omitted variables. It says nothing about significance or causality."],
+["Supply","Why can two indifference curves of the same person never cross?",["Crossing would imply inconsistent preferences","Crossing would violate the budget constraint","Crossing would make the MRS equal the wage","Crossing would remove the corner solution"],0,"A crossing point would sit on two utility levels at once, so one bundle would be ranked above and equal to another."],
+["Measurement","An unemployed person gives up searching and leaves the labour force. Which statistic is unchanged?",["Employment rate","Unemployment rate","Labour force participation rate","Number in the labour force"],0,"Employment and the eligible population do not change. UR and LFPR both fall."],
+["Supply","Wage rises and the income and substitution effects are exactly equal in size. What does the individual supply curve look like at that point?",["Vertical, since hours do not change","Flat, since the wage is fixed","Upward sloping, since wages are higher","Backward bending, since income dominates"],0,"Equal and opposite effects leave hours unchanged, so the curve is vertical there."],
+["Supply","A wage increase hits someone who did not work before. Which statement is correct about their participation?",["They enter only if the new wage exceeds their reservation wage","They enter only if the substitution effect beats the income effect","They enter whenever their income effect is negative","They enter only if leisure is an inferior good"],0,"Participation is decided by wage versus reservation wage. The income and substitution trade-off matters only for hours of those already working."],
+["Data","Tracking the same households in Ontario, BC and Quebec across many years is an example of which data type?",["Panel data, with both dimensions","Time-series data, since years vary","Cross-sectional data, since provinces vary","Aggregate data, since provinces are pooled"],0,"Panel data follows the same units over time, combining time-series and cross-sectional features."],
+["Regression","Two variables move together almost perfectly in the data. What can you conclude?",["They are correlated, but causality needs more work","One of them must be causing the other","The regression slope is statistically significant","A third variable must be driving both"],0,"Correlation can be spurious or driven by omitted factors. Causal claims need stronger methods."],
+["Supply","What does it mean if a person's reservation wage rises when non-labour income rises?",["Leisure becomes more valuable at the margin when at T","The market wage must have fallen","The budget line has pivoted, not shifted","Consumption has become less valuable at T"],0,"With more income, the MRS at L = T is higher, so a higher wage is needed to coax them into working."],
+["Supply","Which description fits a corner solution in the labour-leisure model?",["MRS at L = T exceeds the market wage","MRS equals the wage at some L below T","The budget line touches no indifference curve","Hours worked are positive but very small"],0,"The person values the first hour of leisure-given-up more than the wage pays, so they stay at L = T and do not participate."],
+["Measurement","Which best describes the intensive margin of labour supply?",["Hours worked among those who are working","The share of people who choose to work","The count of people searching for work","The change in wages across occupations"],0,"The extensive margin is participation. The intensive margin is hours conditional on working, so it ignores non-workers."],
+["Elasticity","Total (uncompensated) elasticity is positive. What must be true?",["The substitution effect outweighs the income effect","The income effect outweighs the substitution effect","The two effects are exactly equal","Leisure must be an inferior good"],0,"Total elasticity is roughly the substitution elasticity plus the (negative) income elasticity, so a positive total means substitution dominates."],
+["Regression","A coefficient is 3.0 with a standard error of 2.5. What is the usual rule-of-thumb verdict?",["Probably not significant, since it is under twice the SE","Significant, since the coefficient is positive","Significant, since it is larger than the SE","Cannot tell without the R-squared"],0,"The rule of thumb needs the coefficient to be at least about twice the standard error. R-squared is not needed for this check."],
+["Policy","A lump-sum demogrant is paid to everyone regardless of work. What is its effect on a worker's hours?",["Hours fall through a pure income effect","Hours rise through a substitution effect","Hours rise since the wage is higher","Hours stay put, since the wage is unchanged"],0,"The grant raises non-labour income, shifting the budget line out in parallel and leaving the slope alone."],
+["Supply","Which is exogenous to the individual in the basic model?",["Non-labour income","Hours of leisure","Consumption","Hours worked"],0,"Wage, non-labour income, preferences and total time are given. Consumption, leisure and hours are chosen."],
+["Measurement","In a downturn, a spouse starts looking for work to make up for a partner's lost job. What is this called?",["The added worker effect","The discouraged worker effect","Hidden unemployment","The substitution effect"],0,"Added workers enter the labour force, which raises LFPR."],
+["Supply","Leisure is an inferior good. Non-labour income rises. What happens to hours?",["Hours rise, since the income effect reverses","Hours fall, since income is higher","Hours stay put, since the wage is fixed","Hours fall, since substitution dominates"],0,"With inferior leisure, more income means less leisure, so more hours. The usual negative income effect flips."],
+["Regression","What does OLS choose when it fits a line?",["The intercept and slope minimizing squared residuals","The intercept and slope maximizing R-squared only","The line that passes through every data point","The line that minimizes the sum of raw residuals"],0,"OLS minimizes the sum of squared residuals. Raw residuals would cancel out."],
+["Policy","A benefit is clawed back at 100 percent for every dollar earned. What does a worker gain from working a few hours?",["Nothing, since each dollar earned is offset","A lower wage, since the benefit is fixed","A bigger income effect, since pay is higher","Extra leisure, since the benefit is taxed"],0,"Net income stays flat until the benefit is exhausted, so nobody chooses small positive hours."],
+["Elasticity","Which pair has the correct signs?",["Income elasticity negative, compensated elasticity positive","Income elasticity positive, compensated elasticity negative","Both negative, since leisure is normal","Both positive, since wages are higher"],0,"A normal-good leisure gives a negative income elasticity. A compensated change holds utility fixed, so only substitution remains, which is positive."],
+["Measurement","Discouraged workers leave the labour force. What happens to the measured unemployment rate?",["It falls, hiding weakness in the market","It rises, since fewer people are working","It is unchanged, as employment is fixed","It rises, since the labour force grows"],0,"They leave the numerator and denominator of UR, so UR looks better. This is hidden unemployment."],
+["Supply","A wage increase pivots the budget line. How does that differ from a rise in non-labour income?",["A pivot changes the slope, not just the position","A pivot shifts the line in parallel","A pivot removes the corner solution","A pivot changes the indifference curve shape"],0,"The slope is the wage. Only a wage change tilts the line, so only a wage change has a substitution effect."],
+["Data","Which data type is most appropriate to study how the unemployment rate in one country evolved over decades?",["Time-series data","Cross-sectional microdata","Panel data across firms","Experimental data"],0,"One unit followed over time is a time series."],
+["Policy","A negative income tax guarantees a minimum income that shrinks as earnings rise. How does it move the budget line?",["It raises the intercept and flattens the slope","It raises the intercept and steepens the slope","It lowers the intercept and flattens the slope","It leaves the intercept and flattens the slope"],0,"The guarantee raises income at L = T, while the implicit tax rate cuts the net wage. Both effects push hours down."],
+["Supply","Which statement about the reservation wage is correct?",["Participation requires a market wage above it","It always equals the market wage","It falls when non-labour income rises","It is the MRS at the interior optimum"],0,"It is the MRS at L = T. A market wage above it makes some work worthwhile."],
+["Regression","Women's participation is 18.62 plus 4.12 times ln(GNI). A one-unit rise in ln(GNI) is linked to what change?",["A 4.12 percentage point rise in participation","A 4.12 percent rise in participation","A 18.62 point rise in participation","A one-unit rise in participation"],0,"The slope is in the units of the dependent variable, which is percentage points. Association, not necessarily cause."],
+["Policy","Why can a wage subsidy raise hours for some workers?",["It raises the net wage, so substitution can dominate","It raises non-labour income, so leisure rises","It lowers the wage, so work becomes cheaper","It removes the income effect entirely"],0,"A higher net wage brings both effects. When substitution wins, hours rise, especially in the phase-in range."],
+["Measurement","Which activity counts as employment in the labour force survey?",["Paid self-employment","Volunteering at a charity","Caring for your own children","Full-time study without pay"],0,"Employment means working for pay, including self-employment. Volunteer and home work do not count."],
+["Supply","Why are indifference curves downward sloping?",["Giving up leisure needs more consumption to keep utility equal","Consumption and leisure always cost the same","More of both goods lowers total utility","The wage falls as leisure rises"],0,"Both are goods. Less of one must be offset by more of the other to stay on the same curve."],
+["Regression","Which correlation shows the stronger linear relationship?",["Negative 0.9","Positive 0.2","Positive 0.3","They are equally strong"],0,"Strength depends on absolute value. The sign only gives direction."],
+["Supply","In the basic model, what is income at L = T on the budget line?",["Non-labour income","The wage times total time","Zero","Consumption at the optimum"],0,"At L = T the person works zero hours, so only non-labour income remains."],
+["Measurement","Which person is excluded from the eligible population (POP)?",["Someone living in a prison","A retired person aged 70","A student aged 16","A stay-at-home parent"],0,"POP is the non-institutionalized civilian population aged 15 and over. Retirees, students and parents are included, as non-participants."],
+["Elasticity","If leisure is an inferior good, what is the sign of the income elasticity of labour supply?",["Positive","Negative","Zero","Undefined"],0,"More non-labour income lowers leisure demand, so hours rise."],
+["Data","Why do economists value panel data over a single cross-section?",["It follows the same people as circumstances change","It has more variables than any survey","It is always free of measurement error","It removes the need for regression"],0,"Seeing the same units across time helps separate individual differences from changes."],
+["Supply","A wage rises. Why does the substitution effect raise hours?",["Leisure now has a higher opportunity cost","The person has more income to spend","Non-labour income has risen too","The reservation wage has fallen to zero"],0,"Each hour of leisure costs more forgone earnings, so the person substitutes toward work."],
+["Measurement","A worker loses a job and starts searching. What happens to LFPR and UR?",["LFPR is unchanged and UR rises","LFPR falls and UR rises","LFPR is unchanged and UR falls","LFPR rises and UR rises"],0,"They move from E to U within LF, so LF is unchanged and U rises."],
+["Regression","What does the error term capture?",["Everything affecting the outcome that is left out of the model","Mistakes made when entering the data","The gap between the intercept and zero","The standard error of the slope"],0,"Omitted variables and randomness are lumped into e."],
+["Policy","How does a refundable credit's phase-out range affect hours?",["The falling net wage pushes hours down","The rising net wage pushes hours up","Only the income effect changes hours","It has no effect on the budget line"],0,"Benefits shrink as earnings rise, which cuts the net wage. The extra income also raises leisure. Both reduce hours."],
+["Supply","Which worker is most likely to quit after non-labour income rises?",["One whose wage barely exceeds the reservation wage","One whose wage far exceeds the reservation wage","One with the steepest budget line","One who already works the most hours"],0,"The reservation wage rises, and a marginal worker is the first to fall below it."],
+["Elasticity","Why is the compensated elasticity positive?",["Utility is held fixed, so only substitution remains","Leisure is always a normal good","Income effects are always negligible","Wages and hours are always positively linked"],0,"Compensation removes the income effect. A higher wage then only pulls toward work."],
+["Measurement","Discouraged workers dominate added workers in a downturn. What happens to LFPR?",["It falls","It rises","It stays put","It becomes undefined"],0,"Net exits from the labour force lower participation."],
+["Supply","Can a wage increase push a current worker out of the labour force?",["No, since the wage stays above the reservation wage","Yes, since the income effect always dominates","Yes, since leisure is inferior","Only if non-labour income also rises"],0,"A rising wage widens the gap over the reservation wage. Hours may fall, but they stay positive."],
+["Regression","What is a spurious correlation?",["A link where neither variable affects the other","A link that is statistically insignificant","A link with a low R-squared","A link between two dependent variables"],0,"The variables move together by coincidence or because of a third factor, not because of a causal link."],
+["Policy","Which change has a pure income effect on hours?",["A lump-sum grant to everyone","A cut in the net wage","A refundable wage credit","A rise in the clawback rate"],0,"Only a lump-sum payment shifts the budget line without tilting it."],
+["Supply","The income-leisure decomposition draws a hypothetical line E'. What does it hold fixed?",["The old utility level at the new wage","The old income at the new wage","The old wage at a new utility level","The old hours at the new wage"],0,"This isolates the pure substitution effect from the income effect."],
+["Data","Which best describes cross-sectional data?",["Many units measured at one point in time","One unit measured over many years","The same units measured over many years","Only government averages"],0,"A snapshot of many individuals or regions. It has no time dimension."],
+["Measurement","Which statement about ER and LFPR must hold?",["ER is never larger than LFPR","ER is never smaller than LFPR","ER equals LFPR when UR is positive","ER equals one minus UR"],0,"E is part of LF and both use POP as the denominator."],
+["Policy","The clawback rate falls from 100 percent to 50 percent. What happens to the net wage?",["It rises from zero to half the market wage","It rises to the full market wage","It stays at zero","It falls to half the market wage"],0,"Each dollar earned now cuts the benefit by only 50 cents, so the worker keeps the rest."],
+["Supply","When does the individual supply curve bend backward?",["When the income effect outweighs substitution","When substitution outweighs the income effect","When both effects are zero","When leisure is an inferior good"],0,"A higher wage then lowers hours."],
+["Regression","What is the standard error used for?",["Judging whether the coefficient differs from zero","Measuring the share of variation explained","Choosing the intercept in OLS","Proving causation"],0,"Comparing a coefficient with its SE shows how precisely it is estimated."],
+["Supply","A higher wage does what to the budget line, with leisure on the horizontal axis?",["It makes the line steeper","It makes the line flatter","It shifts the line in parallel","It rotates the line about T"],0,"Slope equals the wage. The line pivots around the point at L = T."],
+["Elasticity","How is the total (uncompensated) elasticity defined?",["Percent change in hours from a 1 percent wage rise","Percent change in wage from a 1 percent hours rise","Dollar change in hours from a wage rise","Percent change in income from a hours rise"],0,"It is the response of hours to wages with both effects operating."],
+["Regression","Higher R-squared in model A than model B means what?",["A explains a larger share of the variation in the outcome","A shows a causal link and B does not","A has more significant coefficients","A has a steeper slope"],0,"R-squared measures fit only."],
+["Policy","What does a demogrant do to participation?",["It lowers it, since reservation wages rise","It raises it, since income is higher","It leaves it unchanged, since the wage is fixed","It raises it, since the net wage is higher"],0,"Higher non-labour income raises the reservation wage, so some marginal workers stop participating."],
+["Measurement","What makes unemployment hidden?",["Discouraged workers who stopped searching","Workers on paid leave","Self-employed workers","Workers in part-time jobs"],0,"They lower measured unemployment even though they would like work."],
+["Supply","Moving to a higher indifference curve means what?",["Higher utility","Higher income, with lower utility","Higher leisure, with lower utility","A steeper budget line"],0,"Curves further from the origin show more of at least one good, with none less."],
+["Measurement","Employment rises, yet the unemployment rate also rises. Is that possible?",["Yes, if the labour force grows faster","Yes, if the eligible population shrinks","No, since more jobs always cut unemployment","No, since UR depends only on employment"],0,"UR is U/LF. New entrants who do not find jobs add to U even as E grows."],
+["Regression","What does the intercept in a simple regression show?",["The predicted outcome when X equals zero","The change in the outcome per unit of X","The share of variation explained","The precision of the slope"],0,"It is the fitted value of Y at X = 0. The slope gives the per-unit change."],
+["Supply","Why are indifference curves convex to the origin?",["People prefer balanced bundles, so MRS diminishes","People prefer more leisure at every wage","Consumption is cheaper than leisure","Budget lines are always straight"],0,"With plenty of one good, people give up more of it to get a little of the other."],
+["Measurement","A part-time worker wants more hours but cannot get them. How are they classified?",["Employed","Unemployed","Not in the labour force","Discouraged"],0,"The survey counts anyone working for pay as employed, whatever their hours preference."],
+["Regression","Participation raises income, and income raises participation. What problem is this?",["Reverse causality","Spurious correlation only","A low R-squared","Measurement of the intercept"],0,"The causal arrow runs both ways, so the slope cannot be read as a one-way effect."],
+["Supply","A wage falls for someone currently working. What do the two effects do to hours?",["Income effect raises, substitution effect lowers","Income effect lowers, substitution effect raises","Both effects raise hours","Both effects lower hours"],0,"Lower wage means a poorer person who wants more income, but cheaper leisure."],
+["Elasticity","Everything else equal, a more negative income elasticity leads to what total elasticity?",["A lower total elasticity","A higher total elasticity","The same total elasticity","An undefined total elasticity"],0,"Total is the substitution response plus the income response, so a bigger negative income term pulls it down."],
+["Policy","Why does a perfectly targeted benefit with full clawback reduce work incentives?",["Earnings are fully offset until the benefit is gone","Wages are cut by the tax system","Non-labour income falls","Leisure becomes more costly"],0,"The net wage is zero over the clawback range, so nobody chooses hours there."],
+["Measurement","Which change leaves the unemployment rate unaffected?",["A retired person staying retired","An unemployed person finding work","A worker losing a job","A student starting to search"],0,"People outside the labour force are in neither the numerator nor the denominator."],
+["Supply","Moving along one indifference curve captures which effect?",["Substitution effect","Income effect","Participation effect","Wealth effect"],0,"Utility stays constant, so only the change in relative price drives the move."],
+["Policy","Why do targeted benefits distort work more than universal ones?",["Clawbacks act like a tax on earnings","They raise the wage rate","They remove non-labour income","They increase total time T"],0,"A universal grant is lump-sum. A targeted one shrinks as you earn, which lowers the net wage."],
+["Regression","A variable affects both X and Y but is left out. What follows?",["The slope on X may be biased","R-squared must be zero","The intercept must be zero","The standard error disappears"],0,"The slope picks up part of the omitted variable's effect."],
+["Supply","Leisure rises by two hours. What happens to hours worked, with T fixed?",["They fall by two","They rise by two","They stay the same","They double"],0,"T equals L plus h, so a rise in one is a fall in the other."],
+["Policy","In the phase-in range of a refundable credit, what dominates?",["Substitution, so hours rise","Income, so hours fall","Neither, so hours are fixed","Participation, so hours fall"],0,"The net wage rises sharply, and the substitution effect wins."],
+["Measurement","Which question is about the extensive margin?",["Do more mothers choose to work?","Do workers put in longer weeks?","Do wages rise with seniority?","Do firms post more vacancies?"],0,"Participation is the extensive margin. Hours conditional on working is the intensive one."],
+["Supply","A person values leisure more than before. What happens to their reservation wage?",["It rises","It falls","It stays the same","It equals the wage"],0,"The MRS at L = T rises, so a higher wage is needed to make working worthwhile."],
+["Regression","Why use the logarithm of income as a regressor?",["It turns large gaps into proportional differences","It guarantees a causal reading","It removes the need for an intercept","It raises R-squared automatically"],0,"Rich and poor countries differ hugely in levels. Logs make the comparison proportional."],
+["Policy","What explains the flat range of a refundable credit?",["The wage is unchanged and income rises, so hours fall","The wage rises and income is unchanged","The wage falls and income falls","Both rise, so hours rise"],0,"The subsidy stops growing, so only the income effect remains."],
+["Elasticity","What does a larger compensated elasticity say about labour supply?",["Hours respond more strongly to the pure price of leisure","Hours respond less to the wage","Leisure is more inferior","The income effect disappears"],0,"It measures the response once income effects are removed."],
+["Supply","Two people have the same wage and non-labour income but different hours. Why?",["Their preferences differ","Their budget lines differ","Their total time differs","Their wages differ"],0,"The budget constraint is identical, so choices differ because of the utility functions."],
+["Regression","What usually happens to standard errors as the sample grows?",["They tend to shrink","They tend to grow","They are fixed","They become the coefficient"],0,"More data give more precise estimates."],
+["Measurement","Which problem does aggregate (time-series) data have for studying individuals?",["It hides differences between people","It has no time dimension","It lacks any wages","It cannot be graphed"],0,"Averages mix together people with different choices."],
+["Policy","Why does an NIT lower hours for most recipients?",["It lowers the net wage and raises guaranteed income","It raises the net wage and lowers income","It raises T and lowers L","It lowers consumption"],0,"Both the substitution and income effects point toward less work."],
+["Supply","A wage rises and leisure is normal. What does the income effect do?",["Raises leisure and lowers hours","Lowers leisure and raises hours","Raises both leisure and hours","Leaves both unchanged"],0,"The person is richer and buys more leisure."],
+["Policy","Why can a refundable credit beat full clawback for the worker?",["It keeps the return to working positive","It removes all taxes","It lowers the reservation wage to zero","It raises the intercept only"],0,"Higher utility is reachable because working is rewarded rather than offset."],
+["Supply","What is the typical shape of the individual supply curve as wages rise from low to high?",["Upward sloping, then possibly bending back","Backward bending, then upward sloping","Always vertical","Always downward sloping"],0,"Substitution tends to dominate first, and income effects grow as earnings rise."],
+["Measurement","A measure falls only because people stop looking for work. What is the key concern?",["It may reflect exits, not better labour markets","It must reflect more jobs","It is unrelated to participation","It shows higher added worker effects"],0,"Check participation alongside unemployment before concluding the market improved."],
+["Policy","A demogrant affects which workers' participation most?",["Those near their reservation wage","Those far above it","Those with the most hours","Those with the highest wages"],0,"The reservation wage rises with non-labour income, so marginal workers exit."],
+["Supply","A wage rises for someone currently not working. Which statement is right?",["Entry happens only if the new wage exceeds their reservation wage","They enter whenever substitution beats income","They enter whenever leisure is normal","They never enter"],0,"Participation depends on whether the wage clears the reservation wage."],
+["Regression","A model's R-squared is high but one coefficient is tiny relative to its SE. What fits?",["The model fits overall, but that variable is not significant","The variable is highly significant","The model must have no omitted variables","The intercept is wrong"],0,"Overall fit and individual significance are separate checks."],
+["Elasticity","Elastic labour supply means what?",["Hours respond a lot to wage changes","Hours do not change with wages","Wages respond to hours","Income is fixed"],0,"A large percentage change in hours follows a 1 percent wage change."],
+["Supply","T is the total time available. What does it split into?",["Leisure and hours worked","Wages and consumption","Income and leisure","Hours and wages"],0,"T = L + h. Consumption is financed by working hours."],
+["Policy","Why can a wage subsidy raise participation?",["It raises the market wage above reservation wages","It raises non-labour income","It lowers the net wage","It cuts T"],0,"More people find the wage worth taking."]
+];
+// Fixed-seed shuffle: answer positions vary but stay the same on every visit
+let seed=7;const rnd=()=>(seed=(seed*1103515245+12345)%2147483648)/2147483648;
+Q.forEach(x=>{const right=x[2][x[3]];for(let k=3;k>0;k--){const j=Math.floor(rnd()*(k+1));[x[2][k],x[2][j]]=[x[2][j],x[2][k]];}x[3]=x[2].indexOf(right);});
+const el=id=>document.getElementById(id);
+let i=0;const ans={};
+function render(){
+const [t,q,o,c,e]=Q[i],a=ans[i];
+el('meta').textContent=`Question ${i+1} of ${Q.length} · ${t}`;
+el('q').textContent=q;
+el('opts').innerHTML='';
+o.forEach((txt,k)=>{const b=document.createElement('button');b.className='opt';b.textContent=txt;
+if(a!==undefined){b.disabled=true;if(k===c)b.classList.add('right');else if(k===a)b.classList.add('wrong');}
+b.onclick=()=>{ans[i]=k;render();};el('opts').appendChild(b);});
+el('exp').innerHTML=a===undefined?'':`<div class="exp">${a===c?'Correct. ':'Not quite. '}${e}</div>`;
+const n=Object.keys(ans).length,r=Object.keys(ans).filter(k=>ans[k]===Q[k][3]).length;
+el('score').textContent=`${r}/${n} correct`;
+el('prev').disabled=i===0;el('next').disabled=i===Q.length-1;
+grid();
+}
+function grid(){const g=el('grid');g.innerHTML='';
+Q.forEach((_,k)=>{const b=document.createElement('button');b.textContent=k+1;
+if(k===i)b.classList.add('cur');
+if(ans[k]!==undefined)b.classList.add(ans[k]===Q[k][3]?'r':'w');
+b.onclick=()=>{i=k;toggle(false);render();window.scrollTo(0,0);};g.appendChild(b);});}
+function toggle(on){el('grid').classList.toggle('on',on);el('jump').classList.toggle('on',on);el('menu').setAttribute('aria-expanded',on);}
+el('menu').onclick=()=>toggle(!el('grid').classList.contains('on'));
+el('jgo').onclick=()=>{const v=parseInt(el('num').value,10);if(v>=1&&v<=Q.length){i=v-1;toggle(false);render();el('num').value='';}};
+el('prev').onclick=()=>{if(i>0){i--;render();window.scrollTo(0,0);}};
+el('next').onclick=()=>{if(i<Q.length-1){i++;render();window.scrollTo(0,0);}};
+render();
+</script>
+</body>
+</html>
